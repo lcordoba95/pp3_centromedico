@@ -1,0 +1,53 @@
+<?php session_start();
+if(!isset($_SESSION['usuario'])){
+	header('Location: login.php');
+}
+
+require 'conexion.php';
+
+if($_SERVER['REQUEST_METHOD']=='POST'){
+	$usuario = filter_var(strtolower($_POST['usuario']),FILTER_SANITIZE_STRING);
+	$password = $_POST['password'];
+	// $password2 = $_POST['password2'];
+    $nombres = $_POST['nombres'];
+    $apellidos = $_POST['apellidos'];
+    $rol = $_POST['rol'];
+	$errores ='';
+	if(empty($usuario) or empty($password)){
+		$errores.= '<li>Por favor rellena todos los datos correctamente</li>';
+	}
+	else{
+		$statement = $conexion -> prepare(
+			'SELECT * FROM usuarios WHERE usuario = :usuario LIMIT 1');
+		$statement ->execute(array(':usuario'=>$usuario));
+		$resultado= $statement->fetch();
+
+		if($resultado != false){
+			$errores .='<li>El nombre de usuario ya existe</li>';
+		}
+
+
+		$password = hash('sha512',$password);/*
+		$password2 = hash('sha512',$password2);
+		if($password2 != $password){
+			$errores .= '<li>Las contraseñas no son iguales</li>';
+		}*/
+	}
+
+	if($errores==''){
+		$statement = $conexion->prepare(
+			'INSERT INTO usuarios VALUES
+            (null,:usuario,:pass, :nombres, :apellidos,:rol)');
+		$statement-> execute(array(
+			':usuario' => $usuario,
+			':pass'=> $password,
+            ':nombres'=> $nombres,
+            ':apellidos'=> $apellidos,
+            ':rol'=> $rol
+			));
+		header('Location: usuarios.php');
+	}
+}
+require 'vista/registro_vista.php';
+
+?>
